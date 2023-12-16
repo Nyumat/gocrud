@@ -1,6 +1,18 @@
 version: '3.8'
 
 services:
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+    networks:
+      - my_network
   postgres:
     image: postgres:latest
     container_name: my_postgres
@@ -12,6 +24,7 @@ services:
       - "5432:5432"
     networks:
       - my_network
+
 
 networks:
   my_network:

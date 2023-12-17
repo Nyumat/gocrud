@@ -1,22 +1,27 @@
-FROM golang:latest
+FROM golang:alpine as builder
+
+# ENV GO111MODULE=on
 
 LABEL maintainer="nyumat"
 
+RUN apk update && apk add --no-cache git
 WORKDIR /app
 
 COPY go.mod go.sum ./
 
-RUN go mod download
+RUN go mod download 
 
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
-RUN go build -o main .
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
 
-COPY wait.sh /wait.sh
-RUN chmod +x /wait.sh
+WORKDIR /root/
 
-RUN cp main /
+COPY --from=builder /app/main .
+COPY --from=builder /app/.env .
 
 EXPOSE 8080
 
-CMD ["/wait.sh", "postgres:5432", "/main"]
+CMD ["./main"]

@@ -1,4 +1,4 @@
-package controllertests
+package tests
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"io"
 
 	"github.com/gorilla/mux"
 	"github.com/nyumat/gocrud/api/models"
@@ -78,7 +79,8 @@ func TestCreateUser(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.Bytes()), &responseMap)
+		bodyBytes, _ := io.ReadAll(rr.Body)
+		err = json.Unmarshal(bodyBytes, &responseMap)
 		if err != nil {
 			fmt.Printf("Cannot convert to json: %v", err)
 		}
@@ -112,7 +114,8 @@ func TestGetUsers(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	var users []models.User
-	err = json.Unmarshal([]byte(rr.Body.Bytes()), &users)
+	bodyBytes := rr.Body.Bytes()
+	err = json.Unmarshal(bodyBytes, &users)
 	if err != nil {
 		log.Fatalf("Cannot convert to json: %v\n", err)
 	}
@@ -160,7 +163,8 @@ func TestGetUserByID(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.Bytes()), &responseMap)
+		bodyBytes := rr.Body.Bytes()
+		err = json.Unmarshal(bodyBytes, &responseMap)
 		if err != nil {
 			log.Fatalf("Cannot convert to json: %v", err)
 		}
@@ -314,7 +318,8 @@ func TestUpdateUser(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.Bytes()), &responseMap)
+		bodyBytes, _ := io.ReadAll(rr.Body)
+		err = json.Unmarshal(bodyBytes, &responseMap)
 		if err != nil {
 			t.Errorf("Cannot convert to json: %v", err)
 		}
@@ -352,6 +357,7 @@ func TestDeleteUser(t *testing.T) {
 		AuthEmail = user.Email
 		AuthPassword = "password" ////Note the password in the database is already hashed, we want unhashed
 	}
+
 	//Login the user and get the authentication token
 	token, err := server.SignIn(AuthEmail, AuthPassword)
 	if err != nil {
@@ -399,6 +405,7 @@ func TestDeleteUser(t *testing.T) {
 			errorMessage: "Unauthorized",
 		},
 	}
+
 	for _, v := range userSample {
 
 		req, err := http.NewRequest("GET", "/users", nil)
@@ -416,7 +423,7 @@ func TestDeleteUser(t *testing.T) {
 
 		if v.statusCode == 401 && v.errorMessage != "" {
 			responseMap := make(map[string]interface{})
-			err := json.Unmarshal([]byte(rr.Body.Bytes()), &responseMap)
+			err = json.Unmarshal(rr.Body.Bytes(), &responseMap)
 			if err != nil {
 				t.Errorf("Cannot convert to json: %v", err)
 			}

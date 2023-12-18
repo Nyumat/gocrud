@@ -1,4 +1,4 @@
-package controllertests
+package tests
 
 import (
 	"bytes"
@@ -19,6 +19,7 @@ func TestSignIn(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	user, err := seedOneUser()
 	if err != nil {
 		fmt.Printf("This is the error %v\n", err)
@@ -31,7 +32,7 @@ func TestSignIn(t *testing.T) {
 	}{
 		{
 			email:        user.Email,
-			password:     "password", 
+			password:     "password", //Note the password has to be this, not the hashed one from the database
 			errorMessage: "",
 		},
 		{
@@ -125,8 +126,8 @@ func TestLogin(t *testing.T) {
 		}
 
 		if v.statusCode == 422 && v.errorMessage != "" {
-			responseMap := make(map[string]string)
-			err = json.Unmarshal([]byte(rr.Body.Bytes()), &responseMap)
+			responseMap := make(map[string]interface{})
+			err = json.Unmarshal(rr.Body.Bytes(), &responseMap)
 			if err != nil {
 				t.Errorf("Cannot convert to json: %v", err)
 			}

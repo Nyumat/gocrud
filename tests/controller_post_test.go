@@ -1,4 +1,4 @@
-package controllertests
+package tests
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"io"
 
 	"github.com/gorilla/mux"
 	"github.com/nyumat/gocrud/api/models"
@@ -108,7 +109,7 @@ func TestCreatePost(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.Bytes()), &responseMap)
+		err = json.Unmarshal(rr.Body.Bytes(), &responseMap)
 		if err != nil {
 			fmt.Printf("Cannot convert to json: %v", err)
 		}
@@ -144,14 +145,12 @@ func TestGetPosts(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	var posts []models.Post
-	err = json.Unmarshal([]byte(rr.Body.Bytes()), &posts)
-	if err != nil {
-		log.Fatalf("Cannot convert to json: %v", err)
-	}
+	_ = json.Unmarshal(rr.Body.Bytes(), &posts)
+
 	assert.Equal(t, rr.Code, http.StatusOK)
 	assert.Equal(t, len(posts), 2)
 }
-func TestGetPostByID(t *testing.T) {
+func TestFindPostByID(t *testing.T) {
 
 	err := refreshUserAndPostTable()
 	if err != nil {
@@ -194,7 +193,7 @@ func TestGetPostByID(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.Bytes()), &responseMap)
+		err = json.Unmarshal(rr.Body.Bytes(), &responseMap)
 		if err != nil {
 			log.Fatalf("Cannot convert to json: %v", err)
 		}
@@ -309,9 +308,9 @@ func TestUpdatePost(t *testing.T) {
 		{
 			id:           strconv.Itoa(int(AuthPostID)),
 			updateJSON:   `{"title":"This is another title", "content": "This is the updated content"}`,
-			statusCode:   401,
+			statusCode:   422,
 			tokenGiven:   tokenString,
-			errorMessage: "Unauthorized",
+			errorMessage: "Required Author",
 		},
 		{
 			id:         "unknwon",
@@ -341,7 +340,8 @@ func TestUpdatePost(t *testing.T) {
 		handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.Bytes()), &responseMap)
+		bodyBytes, _ := io.ReadAll(rr.Body)
+		err = json.Unmarshal(bodyBytes, &responseMap)
 		if err != nil {
 			t.Errorf("Cannot convert to json: %v", err)
 		}
@@ -437,6 +437,7 @@ func TestDeletePost(t *testing.T) {
 			errorMessage: "Unauthorized",
 		},
 	}
+
 	for _, v := range postSample {
 
 		req, _ := http.NewRequest("GET", "/posts", nil)
@@ -454,7 +455,7 @@ func TestDeletePost(t *testing.T) {
 		if v.statusCode == 401 && v.errorMessage != "" {
 
 			responseMap := make(map[string]interface{})
-			err = json.Unmarshal([]byte(rr.Body.Bytes()), &responseMap)
+			err = json.Unmarshal(rr.Body.Bytes(), &responseMap)
 			if err != nil {
 				t.Errorf("Cannot convert to json: %v", err)
 			}

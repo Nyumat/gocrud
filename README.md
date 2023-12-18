@@ -80,7 +80,11 @@ The `api` service is built using the `Dockerfile` in the root directory. The `fu
 
 ## 🧪 Testing
 
-You can run the tests using the `go test` command.
+You can run the tests within the `tests` directory using the following command:
+
+```bash
+docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
+```
 
 ```bash
 go test ./...
